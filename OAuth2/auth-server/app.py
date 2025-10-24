@@ -23,6 +23,12 @@ from database import (
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(32)
 
+# 세션 설정 (개발 환경용)
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = False  # HTTPS가 아니므로 False
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1시간
+
 # CORS 허용 (개발용)
 @app.after_request
 def after_request(response):
@@ -98,6 +104,7 @@ def authorize():
             'code_challenge': code_challenge,
             'code_challenge_method': code_challenge_method
         }
+        session.permanent = True  # 세션을 영구적으로 설정
         
         # 로그인 화면 표시
         return render_template('login.html', client=client)

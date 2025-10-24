@@ -16,6 +16,12 @@ from config import HOST_IP, AUTHORIZATION_SERVER, REDIRECT_URI_BACKEND
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(32)
 
+# 세션 설정 (개발 환경용)
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = False  # HTTPS가 아니므로 False
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1시간
+
 # OAuth2 설정
 CLIENT_ID = "client_backend"
 CLIENT_SECRET = "secret_backend"  # 백엔드에서 안전하게 보관
@@ -44,6 +50,7 @@ def login():
     # CSRF 방지를 위한 state 생성
     state = secrets.token_urlsafe(32)
     session['oauth_state'] = state
+    session.permanent = True  # 세션을 영구적으로 설정
     
     # Authorization 요청 파라미터
     params = {
@@ -58,6 +65,7 @@ def login():
     auth_url = f"{AUTHORIZATION_SERVER}/authorize?{urlencode(params)}"
     
     print(f"\n🚀 사용자를 Authorization Server로 리다이렉트")
+    print(f"   State 생성: {state}")
     print(f"   URL: {auth_url}\n")
     
     return redirect(auth_url)
@@ -85,13 +93,17 @@ def callback():
     
     # State 검증 (CSRF 방지)
     stored_state = session.get('oauth_state')
+    print(f"\n🔍 State 검증:")
+    print(f"   받은 state: {state}")
+    print(f"   저장된 state: {stored_state}")
+    print(f"   세션 ID: {session.get('_id', 'N/A')}")
+    print(f"   세션 내용: {dict(session)}\n")
+    
     if not state or state != stored_state:
         print(f"\n❌ State 불일치! CSRF 공격 가능성")
-        print(f"   받은 state: {state}")
-        print(f"   저장된 state: {stored_state}\n")
         return render_template('error.html', 
                              error="invalid_state", 
-                             error_description="State parameter mismatch")
+                             error_description=f"State parameter mismatch. Received: {state}, Expected: {stored_state}")
     
     # State 사용 완료 (일회용)
     session.pop('oauth_state', None)
