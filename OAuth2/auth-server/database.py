@@ -3,7 +3,13 @@
 실제 운영에서는 PostgreSQL, MySQL 등을 사용
 """
 import secrets
+import os
+import sys
 from datetime import datetime, timedelta
+
+# config 모듈 import를 위한 경로 추가
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import HOST_IP
 
 # 사용자 데이터베이스
 USERS = {
@@ -26,14 +32,14 @@ CLIENTS = {
     "client_backend": {
         "client_secret": "secret_backend",
         "client_type": "confidential",  # Confidential Client
-        "redirect_uris": ["http://localhost:8080/callback"],
+        "redirect_uris": [f"http://{HOST_IP}:8080/callback"],
         "name": "Backend Web App",
         "scopes": ["profile", "email"]
     },
     "client_spa": {
         "client_secret": None,  # Public Client는 secret 없음
         "client_type": "public",  # Public Client
-        "redirect_uris": ["http://localhost:8081/callback.html"],
+        "redirect_uris": [f"http://{HOST_IP}:8081/callback.html"],
         "name": "SPA Application",
         "scopes": ["profile", "email"]
     }

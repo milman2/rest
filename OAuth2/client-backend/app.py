@@ -5,16 +5,21 @@ client_secret을 안전하게 보관할 수 있는 서버 사이드 애플리케
 from flask import Flask, request, redirect, render_template, session, url_for, jsonify
 import requests
 import secrets
+import os
+import sys
 from urllib.parse import urlencode
+
+# config 모듈 import
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import HOST_IP, AUTHORIZATION_SERVER, REDIRECT_URI_BACKEND
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(32)
 
 # OAuth2 설정
-AUTHORIZATION_SERVER = "http://localhost:5000"
 CLIENT_ID = "client_backend"
 CLIENT_SECRET = "secret_backend"  # 백엔드에서 안전하게 보관
-REDIRECT_URI = "http://localhost:8080/callback"
+REDIRECT_URI = REDIRECT_URI_BACKEND
 SCOPE = "profile email"
 
 
@@ -229,16 +234,18 @@ if __name__ == '__main__':
     print("\n" + "="*60)
     print("🚀 Confidential Client 시작 (백엔드 웹앱)")
     print("="*60)
+    print(f"\n🌐 HOST IP: {HOST_IP}")
+    print("   💡 변경하려면: export HOST_IP=your_ip")
     print("\n📋 OAuth2 설정:")
     print(f"   Client ID: {CLIENT_ID}")
     print(f"   Client Secret: {CLIENT_SECRET} ✅ (백엔드에서 안전하게 보관)")
     print(f"   Redirect URI: {REDIRECT_URI}")
     print(f"   Authorization Server: {AUTHORIZATION_SERVER}")
     print("\n🌐 애플리케이션:")
-    print("   http://localhost:8080")
+    print(f"   http://{HOST_IP}:8080")
     print("\n💡 테스트:")
     print("   1. Authorization Server가 실행 중인지 확인")
-    print("   2. http://localhost:8080 접속")
+    print(f"   2. http://{HOST_IP}:8080 접속")
     print("   3. '로그인' 버튼 클릭")
     print("   4. user1/pass1 로 로그인")
     print("\n" + "="*60 + "\n")

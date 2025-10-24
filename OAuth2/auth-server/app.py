@@ -4,7 +4,14 @@ Google, Facebook과 같은 인증 제공자 역할
 """
 from flask import Flask, request, render_template, redirect, session, jsonify, url_for
 import secrets
+import os
+import sys
 from urllib.parse import urlencode, parse_qs
+
+# config 모듈 import
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import HOST_IP
+
 from database import (
     verify_user, get_user, verify_client, get_client,
     verify_redirect_uri, generate_authorization_code,
@@ -355,10 +362,12 @@ if __name__ == '__main__':
     print("\n📋 등록된 클라이언트:")
     print("   - client_backend (Confidential Client)")
     print("   - client_spa (Public Client)")
+    print(f"\n🌐 HOST IP: {HOST_IP}")
+    print("   💡 변경하려면: export HOST_IP=your_ip")
     print("\n🌐 엔드포인트:")
-    print("   - http://localhost:5000/authorize")
-    print("   - http://localhost:5000/token")
-    print("   - http://localhost:5000/userinfo")
+    print(f"   - http://{HOST_IP}:5000/authorize")
+    print(f"   - http://{HOST_IP}:5000/token")
+    print(f"   - http://{HOST_IP}:5000/userinfo")
     print("\n" + "="*60 + "\n")
     
     app.run(host='0.0.0.0', port=5000, debug=True)

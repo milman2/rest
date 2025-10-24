@@ -9,7 +9,33 @@
 python3 --version
 ```
 
-### 2. 포트 확인
+### 2. HOST IP 설정 (중요!)
+
+이 프로젝트는 **자동으로 HOST IP를 감지**합니다!
+
+#### 자동 감지
+기본적으로 서버가 네트워크 IP를 자동으로 감지합니다 (예: 192.168.50.135)
+
+#### 수동 설정 (선택사항)
+특정 IP를 사용하려면:
+```bash
+# Linux/Mac
+export HOST_IP=192.168.50.135
+
+# Windows
+set HOST_IP=192.168.50.135
+
+# 확인
+echo $HOST_IP
+```
+
+#### localhost만 사용
+네트워크 접근이 필요 없다면:
+```bash
+export HOST_IP=localhost
+```
+
+### 3. 포트 확인
 다음 포트들이 사용 가능한지 확인:
 - `5000` - Authorization Server
 - `8080` - Confidential Client
@@ -63,9 +89,9 @@ python app.py
    - client_spa (Public Client)
 
 🌐 엔드포인트:
-   - http://localhost:5000/authorize
-   - http://localhost:5000/token
-   - http://localhost:5000/userinfo
+   - http://192.168.50.135:5000/authorize
+   - http://192.168.50.135:5000/token
+   - http://192.168.50.135:5000/userinfo
 
 ============================================================
 
@@ -75,7 +101,8 @@ python app.py
 ### 1.5. 서버 상태 확인
 **새 터미널 열기:**
 ```bash
-curl http://localhost:5000/
+# 서버 출력에 표시된 IP 사용
+curl http://{HOST_IP}:5000/
 ```
 
 **예상 응답:**
@@ -127,15 +154,15 @@ python app.py
 📋 OAuth2 설정:
    Client ID: client_backend
    Client Secret: secret_backend ✅ (백엔드에서 안전하게 보관)
-   Redirect URI: http://localhost:8080/callback
-   Authorization Server: http://localhost:5000
+   Redirect URI: http://192.168.50.135:8080/callback
+   Authorization Server: http://192.168.50.135:5000
 
 🌐 애플리케이션:
-   http://localhost:8080
+   http://192.168.50.135:8080
 
 💡 테스트:
    1. Authorization Server가 실행 중인지 확인
-   2. http://localhost:8080 접속
+   2. http://192.168.50.135:8080 접속
    3. '로그인' 버튼 클릭
    4. user1/pass1 로 로그인
 
@@ -146,7 +173,7 @@ python app.py
 
 #### 2.5.1. 메인 페이지 접속
 ```
-http://localhost:8080
+http://192.168.50.135:8080
 ```
 
 **확인사항:**
@@ -158,14 +185,14 @@ http://localhost:8080
 #### 2.5.2. 로그인 버튼 클릭
 
 **예상 동작:**
-1. Authorization Server (http://localhost:5000)로 리다이렉트
+1. Authorization Server (http://192.168.50.135:5000)로 리다이렉트
 2. 로그인 화면 표시
 3. "Backend Web App에서 로그인을 요청했습니다" 메시지 확인
 
 **백엔드 터미널에서 확인:**
 ```
 🚀 사용자를 Authorization Server로 리다이렉트
-   URL: http://localhost:5000/authorize?client_id=...
+   URL: http://192.168.50.135:5000/authorize?client_id=...
 ```
 
 #### 2.5.3. 로그인
@@ -197,7 +224,7 @@ http://localhost:8080
 ```
 
 #### 2.5.5. 콜백 처리
-자동으로 http://localhost:8080/callback 으로 리다이렉트
+자동으로 http://192.168.50.135:8080/callback 으로 리다이렉트
 
 **백엔드 터미널에서 확인:**
 ```
@@ -223,7 +250,7 @@ http://localhost:8080
 ✅ Access Token 받음: (토큰값)
 
 🔄 사용자 정보 요청:
-   URL: http://localhost:5000/userinfo
+   URL: http://192.168.50.135:5000/userinfo
    Token: (토큰값)
 
 ✅ 사용자 정보 받음:
@@ -279,21 +306,48 @@ http://localhost:8080
 cd /home/milman2/rest/OAuth2/client-spa
 ```
 
-### 3.2. HTTP 서버 시작
+### 3.2. 가상환경 생성 및 서버 시작
 ```bash
-python3 -m http.server 8081
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python server.py
 ```
 
 **예상 출력:**
 ```
-Serving HTTP on 0.0.0.0 port 8081 (http://0.0.0.0:8081/) ...
+============================================================
+🚀 Public Client (SPA) 시작
+============================================================
+
+🌐 HOST IP: {감지된 IP}
+   💡 변경하려면: export HOST_IP=your_ip
+
+📋 OAuth2 설정:
+   Client ID: client_spa
+   Client Type: Public (PKCE 사용)
+   Redirect URI: http://{HOST_IP}:8081/callback.html
+   Authorization Server: http://{HOST_IP}:5000
+
+🌐 애플리케이션:
+   http://{HOST_IP}:8081
+
+💡 테스트:
+   1. Authorization Server가 실행 중인지 확인
+   2. http://{HOST_IP}:8081 접속
+   3. F12 개발자 도구 열기
+   4. '로그인' 버튼 클릭하여 PKCE 확인
+
+============================================================
+
+ * Running on http://0.0.0.0:8081
 ```
 
 ### 3.3. 브라우저에서 테스트
 
 #### 3.3.1. 메인 페이지 접속 + 개발자 도구 열기
 ```
-http://localhost:8081
+http://192.168.50.135:8081
 ```
 
 **F12 키를 눌러 개발자 도구 열기**
@@ -349,7 +403,7 @@ http://localhost:8081
 "승인" 버튼 클릭
 
 #### 3.3.5. 콜백 처리 (callback.html)
-자동으로 http://localhost:8081/callback.html 로 리다이렉트
+자동으로 http://192.168.50.135:8081/callback.html 로 리다이렉트
 
 **화면에서 확인:**
 - [ ] 로딩 스피너 표시
@@ -408,7 +462,7 @@ http://localhost:8081
 - [ ] "로그아웃" 버튼
 
 **Application 탭에서 확인:**
-(F12 → Application → Local Storage → http://localhost:8081)
+(F12 → Application → Local Storage → http://192.168.50.135:8081)
 - `access_token` 저장됨
 - `user_info` 저장됨
 - `code_verifier` 삭제됨 (일회용!)
@@ -436,19 +490,19 @@ http://localhost:8081
 
 **목적:** PKCE의 중요성 이해
 
-1. http://localhost:8081 접속
+1. http://192.168.50.135:8081 접속
 2. F12 → Console
 3. 다음 코드 실행:
 ```javascript
 // code_challenge 없이 Authorization 요청
 const params = new URLSearchParams({
     client_id: 'client_spa',
-    redirect_uri: 'http://localhost:8081/callback.html',
+    redirect_uri: 'http://192.168.50.135:8081/callback.html',
     response_type: 'code',
     scope: 'profile email'
     // code_challenge 없음!
 });
-window.location.href = `http://localhost:5000/authorize?${params}`;
+window.location.href = `http://192.168.50.135:5000/authorize?${params}`;
 ```
 
 **예상 결과:**
@@ -465,7 +519,7 @@ window.location.href = `http://localhost:5000/authorize?${params}`;
 
 **목적:** PKCE 검증 메커니즘 이해
 
-1. http://localhost:8081 접속
+1. http://192.168.50.135:8081 접속
 2. 로그인 시작 (정상 플로우)
 3. Authorization Code 받은 후, callback.html에서
 4. F12 → Console에서 다음 실행:
@@ -504,7 +558,7 @@ Authorization Server에서:
 **예상 결과:**
 콜백 URL:
 ```
-http://localhost:8080/callback?error=access_denied&error_description=User+denied+access
+http://192.168.50.135:8080/callback?error=access_denied&error_description=User+denied+access
 ```
 
 에러 페이지 표시
@@ -524,7 +578,7 @@ const params = new URLSearchParams({
     response_type: 'code',
     scope: 'profile email'
 });
-window.location.href = `http://localhost:5000/authorize?${params}`;
+window.location.href = `http://192.168.50.135:5000/authorize?${params}`;
 ```
 
 **예상 결과:**

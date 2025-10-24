@@ -17,6 +17,7 @@ OAuth2/
 ├── OAuth2.md                    # OAuth2 이론 및 시퀀스 다이어그램
 ├── README.md                    # 이 파일
 ├── TESTING_GUIDE.md            # 📘 상세 테스트 가이드 ⭐
+├── config.py                    # 🔧 공통 설정 (HOST IP 자동 감지)
 ├── auth-server/                 # Authorization Server + Resource Server
 │   ├── app.py                   # Flask 서버
 │   ├── requirements.txt         # Python 의존성
@@ -31,6 +32,8 @@ OAuth2/
 └── client-spa/                  # Public Client (SPA with PKCE)
     ├── index.html               # 메인 페이지 + PKCE 구현
     ├── callback.html            # OAuth2 콜백 페이지
+    ├── server.py                # Flask 서버 (설정 주입용)
+    ├── requirements.txt
     └── README.md
 ```
 
@@ -65,6 +68,21 @@ OAuth2/
   - PKCE 사용
   - 브라우저에서 직접 Token 교환
 
+## 🌐 HOST IP 설정
+
+이 프로젝트는 **자동으로 HOST IP를 감지**합니다! 
+
+### 기본 동작
+- 자동으로 네트워크 IP 감지 (예: 192.168.50.135)
+- 실패 시 `localhost` 사용
+
+### 수동 설정 (선택사항)
+특정 IP를 사용하려면 환경 변수 설정:
+```bash
+export HOST_IP=192.168.50.135   # Linux/Mac
+set HOST_IP=192.168.50.135      # Windows
+```
+
 ## 🚀 빠른 시작
 
 > 💡 **상세한 테스트 가이드**: [TESTING_GUIDE.md](./TESTING_GUIDE.md)에서 단계별 설명, 예상 출력, 고급 시나리오를 확인하세요!
@@ -79,7 +97,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 python app.py
 ```
-→ http://localhost:5000 에서 실행됨
+→ 자동 감지된 IP:5000 에서 실행됨
 
 ### 2단계: Confidential Client 테스트
 ```bash
@@ -89,15 +107,18 @@ source venv/bin/activate
 pip install -r requirements.txt
 python app.py
 ```
-→ http://localhost:8080 에서 실행됨
+→ 자동 감지된 IP:8080 에서 실행됨
 → 브라우저에서 로그인 테스트
 
 ### 3단계: Public Client (SPA) 테스트
 ```bash
 cd client-spa
-python3 -m http.server 8081
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python server.py
 ```
-→ http://localhost:8081 에서 실행됨
+→ 자동 감지된 IP:8081 에서 실행됨
 → 브라우저에서 PKCE 플로우 테스트
 
 ## 🔐 테스트 계정
@@ -113,15 +134,17 @@ Authorization Server에 미리 등록된 테스트 계정:
 
 | Client ID | Client Secret | Type | Redirect URI |
 |-----------|--------------|------|--------------|
-| client_backend | secret_backend | Confidential | http://localhost:8080/callback |
-| client_spa | (없음) | Public | http://localhost:8081/callback.html |
+| client_backend | secret_backend | Confidential | http://{HOST_IP}:8080/callback |
+| client_spa | (없음) | Public | http://{HOST_IP}:8081/callback.html |
+
+> 💡 {HOST_IP}는 서버 시작 시 자동으로 감지됩니다
 
 ## 🧪 테스트 시나리오
 
 ### 기본 테스트
 
 #### Scenario 1: Confidential Client 테스트
-1. http://localhost:8080 접속
+1. 서버 시작 시 출력된 URL 접속 (예: http://192.168.50.135:8080)
 2. "OAuth2로 로그인" 버튼 클릭
 3. Authorization Server 로그인 화면으로 리다이렉트
 4. user1/pass1 입력
@@ -129,7 +152,7 @@ Authorization Server에 미리 등록된 테스트 계정:
 6. 콜백으로 돌아와서 사용자 정보 표시
 
 #### Scenario 2: Public Client (PKCE) 테스트
-1. http://localhost:8081 접속
+1. 서버 시작 시 출력된 URL 접속 (예: http://192.168.50.135:8081)
 2. 개발자 도구(F12) 콘솔에서 PKCE 과정 확인
 3. "OAuth2로 로그인 (PKCE)" 버튼 클릭
 4. Authorization Server 로그인
