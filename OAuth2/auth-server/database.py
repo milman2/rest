@@ -17,13 +17,13 @@ USERS = {
         "password": "pass1",
         "name": "홍길동",
         "email": "user1@example.com",
-        "profile_image": "https://via.placeholder.com/150"
+        "profile_image": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Crect width='150' height='150' fill='%234a90e2'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='60' fill='white'%3E홍%3C/text%3E%3C/svg%3E"
     },
     "user2": {
         "password": "pass2",
         "name": "김철수",
         "email": "user2@example.com",
-        "profile_image": "https://via.placeholder.com/150"
+        "profile_image": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Crect width='150' height='150' fill='%2350c878'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='60' fill='white'%3E김%3C/text%3E%3C/svg%3E"
     }
 }
 
