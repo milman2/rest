@@ -356,13 +356,112 @@
         }
         
         /**
-         * SHA256 해싱 및 Base64 URL 인코딩
+         * SHA256 해싱 (HTTP 환경에서도 작동)
          */
         async function sha256(plain) {
-            const encoder = new TextEncoder();
-            const data = encoder.encode(plain);
-            const hash = await crypto.subtle.digest('SHA-256', data);
-            return hash;
+            // crypto.subtle이 사용 가능한 경우 (HTTPS 또는 localhost)
+            if (window.crypto && window.crypto.subtle) {
+                try {
+                    const encoder = new TextEncoder();
+                    const data = encoder.encode(plain);
+                    const hash = await crypto.subtle.digest('SHA-256', data);
+                    return hash;
+                } catch (e) {
+                    console.warn('crypto.subtle 사용 실패, 대체 구현 사용:', e);
+                }
+            }
+            
+            // 대체 구현: SubtleCrypto를 사용할 수 없을 때
+            // 간단한 SHA256 구현 (교육용 - 실제 운영에서는 HTTPS 사용 필수!)
+            return sha256Fallback(plain);
+        }
+        
+        /**
+         * SHA256 대체 구현 (HTTP 환경용)
+         */
+        function sha256Fallback(str) {
+            // JavaScript SHA256 구현
+            function rightRotate(value, amount) {
+                return (value >>> amount) | (value << (32 - amount));
+            }
+            
+            const mathPow = Math.pow;
+            const maxWord = mathPow(2, 32);
+            const lengthProperty = 'length';
+            let i, j;
+            let result = '';
+            
+            const words = [];
+            const asciiBitLength = str[lengthProperty] * 8;
+            
+            let hash = sha256Fallback.h = sha256Fallback.h || [];
+            const k = sha256Fallback.k = sha256Fallback.k || [];
+            let primeCounter = k[lengthProperty];
+            
+            const isComposite = {};
+            for (let candidate = 2; primeCounter < 64; candidate++) {
+                if (!isComposite[candidate]) {
+                    for (i = 0; i < 313; i += candidate) {
+                        isComposite[i] = candidate;
+                    }
+                    hash[primeCounter] = (mathPow(candidate, .5) * maxWord) | 0;
+                    k[primeCounter++] = (mathPow(candidate, 1 / 3) * maxWord) | 0;
+                }
+            }
+            
+            str += '\x80';
+            while (str[lengthProperty] % 64 - 56) str += '\x00';
+            for (i = 0; i < str[lengthProperty]; i++) {
+                j = str.charCodeAt(i);
+                if (j >> 8) return;
+                words[i >> 2] |= j << ((3 - i) % 4) * 8;
+            }
+            words[words[lengthProperty]] = ((asciiBitLength / maxWord) | 0);
+            words[words[lengthProperty]] = (asciiBitLength);
+            
+            for (j = 0; j < words[lengthProperty];) {
+                const w = words.slice(j, j += 16);
+                const oldHash = hash;
+                hash = hash.slice(0, 8);
+                
+                for (i = 0; i < 64; i++) {
+                    const w15 = w[i - 15], w2 = w[i - 2];
+                    
+                    const a = hash[0], e = hash[4];
+                    const temp1 = hash[7]
+                        + (rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25))
+                        + ((e & hash[5]) ^ ((~e) & hash[6]))
+                        + k[i]
+                        + (w[i] = (i < 16) ? w[i] : (
+                            w[i - 16]
+                            + (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3))
+                            + w[i - 7]
+                            + (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10))
+                        ) | 0
+                        );
+                    
+                    const temp2 = (rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22))
+                        + ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));
+                    
+                    hash = [(temp1 + temp2) | 0].concat(hash);
+                    hash[4] = (hash[4] + temp1) | 0;
+                }
+                
+                for (i = 0; i < 8; i++) {
+                    hash[i] = (hash[i] + oldHash[i]) | 0;
+                }
+            }
+            
+            // ArrayBuffer 형태로 반환
+            const bytes = new Uint8Array(32);
+            for (i = 0; i < 8; i++) {
+                bytes[i * 4] = (hash[i] >>> 24) & 0xff;
+                bytes[i * 4 + 1] = (hash[i] >>> 16) & 0xff;
+                bytes[i * 4 + 2] = (hash[i] >>> 8) & 0xff;
+                bytes[i * 4 + 3] = hash[i] & 0xff;
+            }
+            
+            return bytes.buffer;
         }
         
         function base64UrlEncode(arrayBuffer) {
