@@ -110,6 +110,14 @@ python app.py
 ```bash
 # 서버 출력에 표시된 IP 사용
 curl http://{HOST_IP}:5000/
+
+curl http://192.168.50.135:5000/
+
+curl -X GET "http://192.168.50.135:5000/authorize?client_id=client_backend&redirect_uri=http://192.168.50.135:8080/callback&response_type=code&scope=profile+email" 2>/dev/null | head -20
+
+url -X POST "http://192.168.50.135:5000/token" -d "grant_type=authorization_code&code=invalid&client_id=client_backend" 2>/dev/null
+
+curl -X GET "http://192.168.50.135:5000/userinfo" -H "Authorization: Bearer invalid_token" 2>/dev/null
 ```
 
 **예상 응답:**
@@ -174,6 +182,14 @@ python app.py
    4. user1/pass1 로 로그인
 
 ============================================================
+```
+
+#### Test
+```shell
+curl http://192.168.50.135:8080/ 2>/dev/null | grep -o "<h1>.*</h1>" | head -1
+
+curl -s http://192.168.50.135:8080/ | grep -E "(Confidential|특징|로그인)" | head -10
+
 ```
 
 ### 2.5. 브라우저에서 테스트
