@@ -37,6 +37,7 @@ def load_html_with_config(filename):
     return content
 
 @app.route('/')
+@app.route('/index.html')
 def index():
     """메인 페이지"""
     return render_template_string(load_html_with_config('index.html'))
