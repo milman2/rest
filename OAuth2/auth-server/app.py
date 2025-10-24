@@ -107,10 +107,19 @@ def authorize():
         username = request.form.get('username')
         password = request.form.get('password')
         
+        # 세션 확인
+        if 'auth_request' not in session:
+            return jsonify({
+                "error": "invalid_request",
+                "error_description": "Session expired. Please restart the authorization flow."
+            }), 400
+        
+        auth_request = session['auth_request']
+        client = get_client(auth_request['client_id'])
+        
         # 사용자 인증
         user_id = verify_user(username, password)
         if not user_id:
-            client = get_client(session['auth_request']['client_id'])
             return render_template('login.html', 
                                  client=client, 
                                  error="아이디 또는 비밀번호가 잘못되었습니다.")
@@ -119,8 +128,6 @@ def authorize():
         session['user_id'] = user_id
         
         # 권한 동의 화면으로 이동
-        auth_request = session['auth_request']
-        client = get_client(auth_request['client_id'])
         scopes = auth_request['scope'].split()
         
         return render_template('consent.html', 
