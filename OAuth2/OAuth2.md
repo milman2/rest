@@ -1,6 +1,6 @@
 ﻿# OAuth2 role
 - Resource Owner : 사용자 (자신의 정보에 접근 권한을 가진 자) = End-User
-- Client : 외부 앱 (사용자의 정보를 요청하는 앱) = Third-party app
+- Client : 외부 앱 (사용자의 정보를 요청하는 앱) = Third-party app / Third-party app의 Client
 - **Authorization Server** : 인증 및 권한 부여를 처리하는 서버 (서비스)
 - **Resource Server** : 실제 사용자의 데이터를 제공하는 서버 (API 서버) = HTTP Service
 
@@ -24,6 +24,13 @@
 - /introspect : 토큰 유효성 검사
 
 ## Access Token
+- access_token
+- expires_in
+- id_token : 사용자의 ID 정보가 포함된 JWT
+- scope
+- token_type : Bearer
+- refresh_token
+
 ## Refresh Token
 ## JWT 사용 여부
 ## 토근 저장소
@@ -42,6 +49,8 @@
 - Client app 자체가 직접 권한을 얻음
 
 # OAuth2 Authorization Code Flow Sequence
+- [웹 서버 애플리케션용 OAuth 2.0 사용](https://developers.google.com/identity/protocols/oauth2/web-server?hl=ko)
+
 ```mermaid
 sequenceDiagram
     participant User as Resource Owner<br/>(사용자)
@@ -73,6 +82,7 @@ sequenceDiagram
 ---
 
 # OAuth2 Authorization Code Flow + PKCE Sequence (Public Client)
+- [클라이언트 측 웹 애플리케이션용 OAuth 2.0](https://developers.google.com/identity/protocols/oauth2/javascript-implicit-flow?hl=ko)
 
 ```mermaid
 sequenceDiagram
