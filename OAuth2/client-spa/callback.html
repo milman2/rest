@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OAuth2 콜백 처리 중...</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 50px;
+            text-align: center;
+        }
+        
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #f5576c;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 30px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        h2 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        
+        .status {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .progress {
+            background: #f7f9fc;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: left;
+        }
+        
+        .progress-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+        }
+        
+        .progress-item.active {
+            background: #e3f2fd;
+        }
+        
+        .progress-item.completed {
+            background: #e8f5e9;
+        }
+        
+        .progress-item.error {
+            background: #ffebee;
+        }
+        
+        .progress-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 12px;
+            font-size: 18px;
+        }
+        
+        .progress-text {
+            color: #555;
+            font-size: 14px;
+        }
+        
+        .error-box {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 6px;
+            text-align: left;
+        }
+        
+        .error-box h3 {
+            color: #c62828;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        .error-box p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="spinner" id="spinner"></div>
+        <h2 id="title">OAuth2 콜백 처리 중...</h2>
+        <div class="status" id="status">잠시만 기다려주세요</div>
+        
+        <div class="progress" id="progress">
+            <div class="progress-item" id="step1">
+                <div class="progress-icon">⏳</div>
+                <div class="progress-text">Authorization Code 확인 중...</div>
+            </div>
+            <div class="progress-item" id="step2">
+                <div class="progress-icon">⏳</div>
+                <div class="progress-text">PKCE Code Verifier 확인 중...</div>
+            </div>
+            <div class="progress-item" id="step3">
+                <div class="progress-icon">⏳</div>
+                <div class="progress-text">Access Token 요청 중...</div>
+            </div>
+            <div class="progress-item" id="step4">
+                <div class="progress-icon">⏳</div>
+                <div class="progress-text">사용자 정보 조회 중...</div>
+            </div>
+        </div>
+        
+        <div class="error-box" id="error-box" style="display: none;">
+            <h3>❌ 오류가 발생했습니다</h3>
+            <p id="error-message"></p>
+            <a href="index.html" class="btn">홈으로 돌아가기</a>
+        </div>
+    </div>
+    
+    <script>
+        // OAuth2 설정
+        const AUTHORIZATION_SERVER = 'http://localhost:5000';
+        const CLIENT_ID = 'client_spa';
+        const REDIRECT_URI = 'http://localhost:8081/callback.html';
+        
+        // ====================================
+        // 콜백 처리
+        // ====================================
+        
+        async function handleCallback() {
+            try {
+                // Step 1: URL에서 Authorization Code와 State 추출
+                updateStep('step1', 'active');
+                const urlParams = new URLSearchParams(window.location.search);
+                const code = urlParams.get('code');
+                const state = urlParams.get('state');
+                const error = urlParams.get('error');
+                
+                // 에러 확인
+                if (error) {
+                    throw new Error(`Authorization 실패: ${error} - ${urlParams.get('error_description')}`);
+                }
+                
+                if (!code) {
+                    throw new Error('Authorization Code를 받지 못했습니다.');
+                }
+                
+                console.log('✅ Authorization Code 받음:', code);
+                updateStep('step1', 'completed', '✅ Authorization Code 받음');
+                
+                // State 검증 (CSRF 방지)
+                const storedState = localStorage.getItem('oauth_state');
+                if (state !== storedState) {
+                    throw new Error('State 불일치! CSRF 공격 가능성');
+                }
+                console.log('✅ State 검증 완료');
+                
+                // Step 2: Code Verifier 확인
+                updateStep('step2', 'active');
+                const codeVerifier = localStorage.getItem('code_verifier');
+                if (!codeVerifier) {
+                    throw new Error('Code Verifier를 찾을 수 없습니다. 다시 로그인해주세요.');
+                }
+                
+                console.log('✅ Code Verifier 확인:', codeVerifier);
+                updateStep('step2', 'completed', '✅ Code Verifier 확인');
+                
+                // Step 3: Authorization Code를 Access Token으로 교환
+                updateStep('step3', 'active');
+                console.log('🔄 Token 교환 시작 (PKCE)');
+                
+                const tokenResponse = await fetch(`${AUTHORIZATION_SERVER}/token`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        grant_type: 'authorization_code',
+                        code: code,
+                        redirect_uri: REDIRECT_URI,
+                        client_id: CLIENT_ID,
+                        code_verifier: codeVerifier  // ⭐ PKCE: Verifier 전송 (secret 대신!)
+                        // client_secret: null  // ⚠️ Public Client는 secret 없음!
+                    })
+                });
+                
+                if (!tokenResponse.ok) {
+                    const errorData = await tokenResponse.json();
+                    throw new Error(`Token 교환 실패: ${errorData.error_description || errorData.error}`);
+                }
+                
+                const tokenData = await tokenResponse.json();
+                console.log('✅ Access Token 받음:', tokenData.access_token);
+                updateStep('step3', 'completed', '✅ Access Token 받음');
+                
+                // Access Token 저장
+                localStorage.setItem('access_token', tokenData.access_token);
+                if (tokenData.refresh_token) {
+                    localStorage.setItem('refresh_token', tokenData.refresh_token);
+                }
+                
+                // Step 4: 사용자 정보 가져오기
+                updateStep('step4', 'active');
+                console.log('🔄 사용자 정보 요청');
+                
+                const userInfoResponse = await fetch(`${AUTHORIZATION_SERVER}/userinfo`, {
+                    headers: {
+                        'Authorization': `Bearer ${tokenData.access_token}`
+                    }
+                });
+                
+                if (!userInfoResponse.ok) {
+                    throw new Error('사용자 정보 조회 실패');
+                }
+                
+                const userInfo = await userInfoResponse.json();
+                console.log('✅ 사용자 정보 받음:', userInfo);
+                updateStep('step4', 'completed', '✅ 사용자 정보 받음');
+                
+                // 사용자 정보 저장
+                localStorage.setItem('user_info', JSON.stringify(userInfo));
+                
+                // 완료 메시지
+                document.getElementById('title').textContent = '✅ 로그인 성공!';
+                document.getElementById('status').textContent = 'PKCE 검증 완료 - 리다이렉트 중...';
+                document.getElementById('spinner').style.display = 'none';
+                
+                // 정리
+                localStorage.removeItem('code_verifier');
+                localStorage.removeItem('oauth_state');
+                
+                // 홈으로 리다이렉트
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1500);
+                
+            } catch (error) {
+                console.error('❌ 콜백 처리 실패:', error);
+                showError(error.message);
+            }
+        }
+        
+        // ====================================
+        // UI 헬퍼 함수
+        // ====================================
+        
+        function updateStep(stepId, status, text = null) {
+            const step = document.getElementById(stepId);
+            step.className = `progress-item ${status}`;
+            
+            const icon = step.querySelector('.progress-icon');
+            if (status === 'completed') {
+                icon.textContent = '✅';
+            } else if (status === 'active') {
+                icon.textContent = '⏳';
+            } else if (status === 'error') {
+                icon.textContent = '❌';
+            }
+            
+            if (text) {
+                step.querySelector('.progress-text').textContent = text;
+            }
+        }
+        
+        function showError(message) {
+            document.getElementById('spinner').style.display = 'none';
+            document.getElementById('title').textContent = '오류 발생';
+            document.getElementById('status').textContent = '';
+            document.getElementById('error-box').style.display = 'block';
+            document.getElementById('error-message').textContent = message;
+            
+            // 모든 step을 error로 표시
+            ['step1', 'step2', 'step3', 'step4'].forEach(stepId => {
+                const step = document.getElementById(stepId);
+                if (step.classList.contains('active')) {
+                    updateStep(stepId, 'error');
+                }
+            });
+        }
+        
+        // ====================================
+        // 페이지 로드 시 콜백 처리 시작
+        // ====================================
+        
+        window.addEventListener('DOMContentLoaded', handleCallback);
+    </script>
+</body>
+</html>
+

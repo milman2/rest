@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>권한 동의 - OAuth2 Authorization Server</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 450px;
+            width: 100%;
+            padding: 40px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #667eea;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .user-info {
+            background: #f7f9fc;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        
+        .user-info img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin-bottom: 10px;
+        }
+        
+        .user-info p {
+            color: #555;
+            font-size: 14px;
+        }
+        
+        .user-info strong {
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .client-request {
+            background: #fff9e6;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 4px;
+        }
+        
+        .client-request h3 {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .client-request .client-name {
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        .permissions {
+            background: #f7f9fc;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .permissions h3 {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .permission-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e1e8ed;
+        }
+        
+        .permission-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .permission-icon {
+            width: 36px;
+            height: 36px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 18px;
+        }
+        
+        .permission-text {
+            flex: 1;
+        }
+        
+        .permission-text strong {
+            display: block;
+            color: #333;
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+        
+        .permission-text span {
+            display: block;
+            color: #888;
+            font-size: 12px;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-approve {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-approve:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-deny {
+            background: #f5f5f5;
+            color: #666;
+        }
+        
+        .btn-deny:hover {
+            background: #e0e0e0;
+        }
+        
+        .warning {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 12px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #c62828;
+        }
+        
+        .info {
+            text-align: center;
+            color: #888;
+            font-size: 12px;
+            margin-top: 20px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔓 권한 요청</h1>
+        </div>
+        
+        <div class="user-info">
+            <img src="{{ user.profile_image }}" alt="Profile">
+            <p>로그인된 사용자</p>
+            <strong>{{ user.name }}</strong>
+            <p style="font-size: 12px; color: #888;">{{ user.email }}</p>
+        </div>
+        
+        <div class="client-request">
+            <h3>
+                <span class="client-name">{{ client.name }}</span>에서<br>
+                다음 정보에 접근하려고 합니다:
+            </h3>
+        </div>
+        
+        <div class="permissions">
+            <h3>요청된 권한</h3>
+            
+            {% if 'profile' in scopes %}
+            <div class="permission-item">
+                <div class="permission-icon">👤</div>
+                <div class="permission-text">
+                    <strong>프로필 정보</strong>
+                    <span>이름, 프로필 사진</span>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if 'email' in scopes %}
+            <div class="permission-item">
+                <div class="permission-icon">📧</div>
+                <div class="permission-text">
+                    <strong>이메일 주소</strong>
+                    <span>계정 이메일 주소</span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="warning">
+            ⚠️ 승인 시 위 정보가 <strong>{{ client.name }}</strong>와 공유됩니다.
+        </div>
+        
+        <form method="POST" action="/consent">
+            <div class="actions">
+                <button type="submit" name="action" value="deny" class="btn btn-deny">
+                    거부
+                </button>
+                <button type="submit" name="action" value="approve" class="btn btn-approve">
+                    승인
+                </button>
+            </div>
+        </form>
+        
+        <div class="info">
+            이 화면은 OAuth2 학습용입니다.<br>
+            실제로는 더 상세한 개인정보 처리 방침과<br>
+            이용 약관이 표시되어야 합니다.
+        </div>
+    </div>
+</body>
+</html>
+

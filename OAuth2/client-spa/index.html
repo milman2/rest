@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Public Client - SPA with PKCE</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 50px;
+        }
+        
+        h1 {
+            color: #333;
+            font-size: 32px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 30px;
+        }
+        
+        .badge-container {
+            text-align: center;
+        }
+        
+        .feature-list {
+            background: #f7f9fc;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .feature-list h3 {
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .feature-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 8px;
+        }
+        
+        .feature-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 16px;
+        }
+        
+        .feature-text {
+            color: #555;
+            font-size: 14px;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(240, 147, 251, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .info-box {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin-top: 30px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #e65100;
+        }
+        
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin-top: 10px;
+            overflow-x: auto;
+        }
+        
+        .highlight {
+            color: #fbbf24;
+            font-weight: bold;
+        }
+        
+        .pkce-demo {
+            background: #e3f2fd;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .pkce-demo h3 {
+            color: #1976d2;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        
+        .pkce-item {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .pkce-item strong {
+            display: block;
+            color: #333;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+        
+        .pkce-item code {
+            display: block;
+            color: #666;
+            font-size: 12px;
+            word-break: break-all;
+            background: #f5f5f5;
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 5px;
+        }
+        
+        #profile {
+            display: none;
+        }
+        
+        .profile-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            color: white;
+        }
+        
+        .profile-image {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 4px solid white;
+            margin-bottom: 15px;
+        }
+        
+        .profile-name {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .profile-email {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .token-info {
+            background: #f7f9fc;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .token-info h3 {
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        .token-display {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 로그인 전 화면 -->
+        <div id="login-screen">
+            <h1>📱 Public Client (SPA)</h1>
+            <div class="subtitle">Single Page Application with PKCE</div>
+            
+            <div class="badge-container">
+                <span class="badge">⚠️ client_secret 없음</span>
+                <span class="badge">✅ PKCE 사용</span>
+            </div>
+            
+            <div class="feature-list">
+                <h3>특징</h3>
+                <div class="feature-item">
+                    <div class="feature-icon">🌐</div>
+                    <div class="feature-text">브라우저에서 직접 실행</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🔐</div>
+                    <div class="feature-text">PKCE (Proof Key for Code Exchange)</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">⚡</div>
+                    <div class="feature-text">클라이언트 사이드 토큰 교환</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🚫</div>
+                    <div class="feature-text">client_secret 불필요</div>
+                </div>
+            </div>
+            
+            <button onclick="login()" class="btn">OAuth2로 로그인 (PKCE)</button>
+            
+            <div class="info-box">
+                <strong>📚 PKCE란?</strong><br>
+                Public Client는 코드가 브라우저에 노출되어 <code>client_secret</code>을 안전하게 보관할 수 없습니다.
+                PKCE는 이를 해결하기 위해 동적으로 생성된 Code Verifier와 Code Challenge를 사용합니다.
+            </div>
+            
+            <div class="pkce-demo" id="pkce-demo" style="display: none;">
+                <h3>🔍 PKCE 생성 과정</h3>
+                <div class="pkce-item">
+                    <strong>1️⃣ Code Verifier (랜덤 문자열 43~128자)</strong>
+                    <code id="code-verifier-display"></code>
+                </div>
+                <div class="pkce-item">
+                    <strong>2️⃣ Code Challenge (SHA256 해싱)</strong>
+                    <code id="code-challenge-display"></code>
+                </div>
+                <div class="pkce-item">
+                    <strong>3️⃣ Authorization 요청 시 Challenge 전송 →</strong>
+                </div>
+                <div class="pkce-item">
+                    <strong>4️⃣ Token 요청 시 Verifier 전송 →</strong>
+                </div>
+                <div class="pkce-item">
+                    <strong>5️⃣ 서버가 SHA256(Verifier) == Challenge 검증 ✅</strong>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 로그인 후 화면 -->
+        <div id="profile">
+            <h1>✅ 로그인 성공!</h1>
+            <div class="subtitle">PKCE 검증 완료</div>
+            
+            <div class="profile-card">
+                <img id="user-image" class="profile-image" src="" alt="Profile">
+                <div class="profile-name" id="user-name"></div>
+                <div class="profile-email" id="user-email"></div>
+            </div>
+            
+            <div class="token-info">
+                <h3>🔑 Access Token</h3>
+                <div class="token-display" id="access-token-display"></div>
+            </div>
+            
+            <button onclick="logout()" class="btn">로그아웃</button>
+        </div>
+    </div>
+    
+    <script>
+        // OAuth2 설정
+        const AUTHORIZATION_SERVER = 'http://localhost:5000';
+        const CLIENT_ID = 'client_spa';
+        // const CLIENT_SECRET = null;  // ⚠️ Public Client는 secret 없음!
+        const REDIRECT_URI = 'http://localhost:8081/callback.html';
+        const SCOPE = 'profile email';
+        
+        // ====================================
+        // PKCE 구현
+        // ====================================
+        
+        /**
+         * 랜덤 문자열 생성 (Code Verifier용)
+         */
+        function generateRandomString(length) {
+            const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+            let result = '';
+            const randomValues = new Uint8Array(length);
+            crypto.getRandomValues(randomValues);
+            
+            for (let i = 0; i < length; i++) {
+                result += charset[randomValues[i] % charset.length];
+            }
+            
+            return result;
+        }
+        
+        /**
+         * SHA256 해싱 및 Base64 URL 인코딩
+         */
+        async function sha256(plain) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(plain);
+            const hash = await crypto.subtle.digest('SHA-256', data);
+            return hash;
+        }
+        
+        function base64UrlEncode(arrayBuffer) {
+            const bytes = new Uint8Array(arrayBuffer);
+            let binary = '';
+            for (let i = 0; i < bytes.length; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            const base64 = btoa(binary);
+            return base64
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=/g, '');
+        }
+        
+        /**
+         * Code Challenge 생성
+         */
+        async function generateCodeChallenge(codeVerifier) {
+            const hashed = await sha256(codeVerifier);
+            return base64UrlEncode(hashed);
+        }
+        
+        // ====================================
+        // OAuth2 로그인
+        // ====================================
+        
+        async function login() {
+            console.log('🚀 OAuth2 로그인 시작 (PKCE)');
+            
+            // 1. Code Verifier 생성 (43~128자의 랜덤 문자열)
+            const codeVerifier = generateRandomString(64);
+            console.log('1️⃣ Code Verifier 생성:', codeVerifier);
+            
+            // 2. Code Challenge 생성 (SHA256 해싱)
+            const codeChallenge = await generateCodeChallenge(codeVerifier);
+            console.log('2️⃣ Code Challenge 생성:', codeChallenge);
+            
+            // PKCE 시각화
+            document.getElementById('pkce-demo').style.display = 'block';
+            document.getElementById('code-verifier-display').textContent = codeVerifier;
+            document.getElementById('code-challenge-display').textContent = codeChallenge;
+            
+            // 3. Code Verifier를 localStorage에 저장 (콜백에서 사용)
+            localStorage.setItem('code_verifier', codeVerifier);
+            
+            // 4. State 생성 (CSRF 방지)
+            const state = generateRandomString(32);
+            localStorage.setItem('oauth_state', state);
+            
+            // 5. Authorization 요청 파라미터
+            const params = new URLSearchParams({
+                client_id: CLIENT_ID,
+                redirect_uri: REDIRECT_URI,
+                response_type: 'code',
+                scope: SCOPE,
+                state: state,
+                code_challenge: codeChallenge,  // ⭐ PKCE: Challenge 전송
+                code_challenge_method: 'S256'    // SHA256 사용
+            });
+            
+            // 6. Authorization Server로 리다이렉트
+            const authUrl = `${AUTHORIZATION_SERVER}/authorize?${params.toString()}`;
+            console.log('3️⃣ Authorization Server로 리다이렉트');
+            console.log('   Code Challenge 포함:', codeChallenge);
+            
+            window.location.href = authUrl;
+        }
+        
+        // ====================================
+        // 로그아웃
+        // ====================================
+        
+        function logout() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('user_info');
+            localStorage.removeItem('code_verifier');
+            localStorage.removeItem('oauth_state');
+            
+            document.getElementById('login-screen').style.display = 'block';
+            document.getElementById('profile').style.display = 'none';
+            document.getElementById('pkce-demo').style.display = 'none';
+            
+            console.log('🚪 로그아웃 완료');
+        }
+        
+        // ====================================
+        // 페이지 로드 시 로그인 상태 확인
+        // ====================================
+        
+        window.addEventListener('DOMContentLoaded', () => {
+            const accessToken = localStorage.getItem('access_token');
+            const userInfo = localStorage.getItem('user_info');
+            
+            if (accessToken && userInfo) {
+                // 이미 로그인되어 있음
+                const user = JSON.parse(userInfo);
+                
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('profile').style.display = 'block';
+                
+                document.getElementById('user-image').src = user.profile_image || 'https://via.placeholder.com/150';
+                document.getElementById('user-name').textContent = user.name;
+                document.getElementById('user-email').textContent = user.email;
+                document.getElementById('access-token-display').textContent = accessToken;
+                
+                console.log('✅ 이미 로그인되어 있습니다.');
+            }
+        });
+    </script>
+</body>
+</html>
+

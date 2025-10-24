@@ -16,6 +16,7 @@ OAuth2를 직접 구현하면서 배우는 실습 프로젝트입니다.
 OAuth2/
 ├── OAuth2.md                    # OAuth2 이론 및 시퀀스 다이어그램
 ├── README.md                    # 이 파일
+├── TESTING_GUIDE.md            # 📘 상세 테스트 가이드 ⭐
 ├── auth-server/                 # Authorization Server + Resource Server
 │   ├── app.py                   # Flask 서버
 │   ├── requirements.txt         # Python 의존성
@@ -28,8 +29,8 @@ OAuth2/
 │   ├── templates/               # UI
 │   └── README.md
 └── client-spa/                  # Public Client (SPA with PKCE)
-    ├── index.html               # 단일 HTML 파일
-    ├── app.js                   # PKCE 구현
+    ├── index.html               # 메인 페이지 + PKCE 구현
+    ├── callback.html            # OAuth2 콜백 페이지
     └── README.md
 ```
 
@@ -63,6 +64,10 @@ OAuth2/
   - `client_secret` 없음
   - PKCE 사용
   - 브라우저에서 직접 Token 교환
+
+## 🚀 빠른 시작
+
+> 💡 **상세한 테스트 가이드**: [TESTING_GUIDE.md](./TESTING_GUIDE.md)에서 단계별 설명, 예상 출력, 고급 시나리오를 확인하세요!
 
 ## 🚀 실행 순서
 
@@ -113,26 +118,34 @@ Authorization Server에 미리 등록된 테스트 계정:
 
 ## 🧪 테스트 시나리오
 
-### Scenario 1: Confidential Client 테스트
+### 기본 테스트
+
+#### Scenario 1: Confidential Client 테스트
 1. http://localhost:8080 접속
-2. "Google로 로그인" 버튼 클릭
+2. "OAuth2로 로그인" 버튼 클릭
 3. Authorization Server 로그인 화면으로 리다이렉트
 4. user1/pass1 입력
 5. 권한 동의
 6. 콜백으로 돌아와서 사용자 정보 표시
 
-### Scenario 2: Public Client (PKCE) 테스트
+#### Scenario 2: Public Client (PKCE) 테스트
 1. http://localhost:8081 접속
 2. 개발자 도구(F12) 콘솔에서 PKCE 과정 확인
-3. "Login" 버튼 클릭
+3. "OAuth2로 로그인 (PKCE)" 버튼 클릭
 4. Authorization Server 로그인
 5. PKCE 검증 과정 확인
 6. 사용자 정보 표시
 
-### Scenario 3: PKCE 없이 시도 (실패 확인)
-1. Public Client에서 PKCE 코드를 주석 처리
-2. 로그인 시도
-3. Token 발급 실패 확인 → PKCE의 중요성 학습
+### 고급 테스트 시나리오
+
+더 많은 테스트 시나리오는 **[TESTING_GUIDE.md](./TESTING_GUIDE.md)**를 참고하세요:
+
+- ✅ PKCE 없이 시도 (실패 확인)
+- ✅ 잘못된 Code Verifier (검증 실패)
+- ✅ 권한 거부 테스트
+- ✅ Redirect URI 불일치
+- ✅ State 불일치 (CSRF 시뮬레이션)
+- ✅ 전체 플로우 비교 및 분석
 
 ## 📊 학습 체크리스트
 
