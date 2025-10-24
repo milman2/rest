@@ -92,9 +92,9 @@ set HOST_IP=192.168.50.135      # Windows
 ### 1단계: Authorization Server 실행
 ```bash
 cd auth-server
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+uv venv --python 3.12
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+uv pip install -r requirements.txt
 python app.py
 ```
 → 자동 감지된 IP:5000 에서 실행됨
@@ -102,9 +102,9 @@ python app.py
 ### 2단계: Confidential Client 테스트
 ```bash
 cd client-backend
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+uv venv --python 3.12
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+uv pip install -r requirements.txt
 python app.py
 ```
 → 자동 감지된 IP:8080 에서 실행됨
@@ -113,9 +113,9 @@ python app.py
 ### 3단계: Public Client (SPA) 테스트
 ```bash
 cd client-spa
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+uv venv --python 3.12
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+uv pip install -r requirements.txt
 python server.py
 ```
 → 자동 감지된 IP:8081 에서 실행됨

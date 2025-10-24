@@ -4,9 +4,16 @@
 
 ## 📋 준비사항
 
-### 1. Python 3.8 이상 설치 확인
+### 1. uv 및 Python 3.12 확인
 ```bash
-python3 --version
+# uv 설치 확인
+uv --version
+
+# uv가 없다면 설치
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Python 3.12 확인
+python3.12 --version
 ```
 
 ### 2. HOST IP 설정 (중요!)
@@ -60,13 +67,13 @@ cd /home/milman2/rest/OAuth2/auth-server
 
 ### 1.2. 가상환경 생성 및 활성화
 ```bash
-python3 -m venv venv
-source venv/bin/activate
+uv venv --python 3.12
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 ```
 
 ### 1.3. 의존성 설치
 ```bash
-pip install -r requirements.txt
+uv pip install -r requirements.txt
 ```
 
 ### 1.4. 서버 실행
@@ -131,13 +138,13 @@ cd /home/milman2/rest/OAuth2/client-backend
 
 ### 2.2. 가상환경 생성 및 활성화
 ```bash
-python3 -m venv venv
-source venv/bin/activate
+uv venv --python 3.12
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 ```
 
 ### 2.3. 의존성 설치
 ```bash
-pip install -r requirements.txt
+uv pip install -r requirements.txt
 ```
 
 ### 2.4. 서버 실행
@@ -308,9 +315,9 @@ cd /home/milman2/rest/OAuth2/client-spa
 
 ### 3.2. 가상환경 생성 및 서버 시작
 ```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+uv venv --python 3.12
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+uv pip install -r requirements.txt
 python server.py
 ```
 
