@@ -366,6 +366,11 @@ python server.py
  * Running on http://0.0.0.0:8081
 ```
 
+#### Test
+```shell
+curl -s http://192.168.50.135:8081/ 2>/dev/null | grep -o "<h1>.*</h1>" | head -1
+```
+
 ### 3.3. 브라우저에서 테스트
 
 #### 3.3.1. 메인 페이지 접속 + 개발자 도구 열기
