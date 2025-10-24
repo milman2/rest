@@ -17,6 +17,7 @@ OAuth2/
 ├── OAuth2.md                    # OAuth2 이론 및 시퀀스 다이어그램
 ├── README.md                    # 이 파일
 ├── TESTING_GUIDE.md            # 📘 상세 테스트 가이드 ⭐
+├── API_GUIDE.md                # 🔐 보호된 API 사용 가이드 (게시물, 설정 등)
 ├── config.py                    # 🔧 공통 설정 (HOST IP 자동 감지)
 ├── auth-server/                 # Authorization Server + Resource Server
 │   ├── app.py                   # Flask 서버
@@ -169,6 +170,16 @@ Authorization Server에 미리 등록된 테스트 계정:
 - ✅ Redirect URI 불일치
 - ✅ State 불일치 (CSRF 시뮬레이션)
 - ✅ 전체 플로우 비교 및 분석
+
+### Access Token으로 보호된 API 사용하기
+
+Access Token은 단순히 인증만을 위한 것이 아닙니다! **[API_GUIDE.md](./API_GUIDE.md)**를 참고하여 다양한 보호된 리소스에 접근하는 방법을 학습하세요:
+
+- 🔐 게시물 조회 및 작성 (`/api/posts`)
+- ⚙️ 사용자 설정 관리 (`/api/settings`)
+- 📊 사용자 통계 조회 (`/api/stats`)
+- 🎯 Scope 기반 권한 제어 이해
+- 🔄 Refresh Token으로 Access Token 갱신
 
 ## 📊 학습 체크리스트
 

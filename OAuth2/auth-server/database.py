@@ -56,6 +56,31 @@ access_tokens = {}
 # Refresh Token 저장소
 refresh_tokens = {}
 
+# 사용자별 게시물 (예시 데이터)
+user_posts = {
+    "user1": [
+        {"id": 1, "title": "OAuth2 학습 시작", "content": "오늘부터 OAuth2를 배워봅니다.", "created_at": "2024-10-24"},
+        {"id": 2, "title": "PKCE 이해하기", "content": "PKCE는 Public Client를 위한 보안 메커니즘입니다.", "created_at": "2024-10-24"}
+    ],
+    "user2": [
+        {"id": 1, "title": "Flask 시작하기", "content": "Flask로 웹 서버를 만들어봤습니다.", "created_at": "2024-10-24"}
+    ]
+}
+
+# 사용자 설정
+user_settings = {
+    "user1": {
+        "language": "ko",
+        "timezone": "Asia/Seoul",
+        "notifications": True
+    },
+    "user2": {
+        "language": "ko",
+        "timezone": "Asia/Seoul",
+        "notifications": False
+    }
+}
+
 
 def verify_user(username, password):
     """사용자 인증"""

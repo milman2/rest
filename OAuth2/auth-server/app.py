@@ -7,6 +7,7 @@ import secrets
 import os
 import sys
 from urllib.parse import urlencode, parse_qs
+from datetime import datetime
 
 # config 모듈 import
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -364,6 +365,159 @@ def introspect():
         "username": token_data['user_id'],
         "exp": int(token_data['expires_at'].timestamp())
     })
+
+
+# ====================================
+# Resource Server - 추가 보호된 API들
+# ====================================
+
+def require_token(required_scopes=None):
+    """Access Token 검증 데코레이터"""
+    from functools import wraps
+    
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            auth_header = request.headers.get('Authorization')
+            if not auth_header or not auth_header.startswith('Bearer '):
+                return jsonify({"error": "unauthorized", "message": "Access token required"}), 401
+            
+            token = auth_header[7:]
+            token_data, error = verify_access_token(token)
+            if error:
+                return jsonify({"error": "invalid_token", "message": error}), 401
+            
+            # Scope 검증
+            if required_scopes:
+                user_scopes = set(token_data['scopes'])
+                if not any(scope in user_scopes for scope in required_scopes):
+                    return jsonify({"error": "insufficient_scope", 
+                                  "message": f"Required scopes: {required_scopes}"}), 403
+            
+            # 함수에 token_data 전달
+            return f(token_data, *args, **kwargs)
+        return decorated_function
+    return decorator
+
+
+@app.route('/api/posts', methods=['GET'])
+@require_token(required_scopes=['profile'])
+def get_posts(token_data):
+    """
+    사용자 게시물 조회 API
+    Scope: profile 필요
+    """
+    from database import user_posts
+    
+    user_id = token_data['user_id']
+    posts = user_posts.get(user_id, [])
+    
+    print(f"\n✅ 게시물 조회 요청:")
+    print(f"   User: {user_id}")
+    print(f"   게시물 수: {len(posts)}\n")
+    
+    return jsonify({
+        "user": user_id,
+        "total": len(posts),
+        "posts": posts
+    })
+
+
+@app.route('/api/posts', methods=['POST'])
+@require_token(required_scopes=['profile'])
+def create_post(token_data):
+    """
+    게시물 작성 API
+    Scope: profile 필요
+    """
+    from database import user_posts
+    
+    user_id = token_data['user_id']
+    data = request.get_json()
+    
+    if not data or 'title' not in data or 'content' not in data:
+        return jsonify({"error": "invalid_request", "message": "title and content required"}), 400
+    
+    # 새 게시물 생성
+    if user_id not in user_posts:
+        user_posts[user_id] = []
+    
+    new_post = {
+        "id": len(user_posts[user_id]) + 1,
+        "title": data['title'],
+        "content": data['content'],
+        "created_at": datetime.now().strftime("%Y-%m-%d")
+    }
+    
+    user_posts[user_id].append(new_post)
+    
+    print(f"\n✅ 게시물 작성:")
+    print(f"   User: {user_id}")
+    print(f"   Title: {new_post['title']}\n")
+    
+    return jsonify(new_post), 201
+
+
+@app.route('/api/settings', methods=['GET'])
+@require_token(required_scopes=['profile'])
+def get_settings(token_data):
+    """
+    사용자 설정 조회 API
+    Scope: profile 필요
+    """
+    from database import user_settings
+    
+    user_id = token_data['user_id']
+    settings = user_settings.get(user_id, {})
+    
+    return jsonify(settings)
+
+
+@app.route('/api/settings', methods=['PUT'])
+@require_token(required_scopes=['profile'])
+def update_settings(token_data):
+    """
+    사용자 설정 업데이트 API
+    Scope: profile 필요
+    """
+    from database import user_settings
+    
+    user_id = token_data['user_id']
+    data = request.get_json()
+    
+    if user_id not in user_settings:
+        user_settings[user_id] = {}
+    
+    user_settings[user_id].update(data)
+    
+    print(f"\n✅ 설정 업데이트:")
+    print(f"   User: {user_id}")
+    print(f"   Updated: {data}\n")
+    
+    return jsonify(user_settings[user_id])
+
+
+@app.route('/api/stats', methods=['GET'])
+@require_token(required_scopes=['profile'])
+def get_stats(token_data):
+    """
+    사용자 통계 API
+    Scope: profile 필요
+    """
+    from database import user_posts, user_settings
+    
+    user_id = token_data['user_id']
+    posts = user_posts.get(user_id, [])
+    
+    stats = {
+        "user": user_id,
+        "total_posts": len(posts),
+        "account_created": "2024-10-24",
+        "last_login": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "scopes": token_data['scopes']
+    }
+    
+    return jsonify(stats)
 
 
 if __name__ == '__main__':

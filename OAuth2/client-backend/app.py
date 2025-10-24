@@ -252,9 +252,85 @@ def profile():
     if not user:
         return redirect(url_for('index'))
     
+    # 사용자 게시물 조회
+    posts = []
+    settings = {}
+    stats = {}
+    
+    try:
+        posts = call_api('GET', '/api/posts', access_token)
+        settings = call_api('GET', '/api/settings', access_token)
+        stats = call_api('GET', '/api/stats', access_token)
+    except Exception as e:
+        print(f"⚠️ API 호출 오류: {e}")
+    
     return render_template('profile.html', 
                          user=user, 
-                         access_token=access_token)
+                         access_token=access_token,
+                         posts=posts,
+                         settings=settings,
+                         stats=stats)
+
+
+def call_api(method, endpoint, access_token, data=None):
+    """
+    Access Token으로 보호된 API 호출
+    """
+    url = f"{AUTHORIZATION_SERVER}{endpoint}"
+    headers = {'Authorization': f'Bearer {access_token}'}
+    
+    if method == 'GET':
+        response = requests.get(url, headers=headers)
+    elif method == 'POST':
+        headers['Content-Type'] = 'application/json'
+        response = requests.post(url, headers=headers, json=data)
+    elif method == 'PUT':
+        headers['Content-Type'] = 'application/json'
+        response = requests.put(url, headers=headers, json=data)
+    else:
+        raise ValueError(f"Unsupported method: {method}")
+    
+    if response.status_code not in [200, 201]:
+        raise Exception(f"API call failed: {response.status_code} - {response.text}")
+    
+    return response.json()
+
+
+@app.route('/api/create_post', methods=['POST'])
+def create_post():
+    """게시물 작성 API 호출"""
+    access_token = session.get('access_token')
+    if not access_token:
+        print("❌ Access token not found in session")
+        return jsonify({"error": "unauthorized"}), 401
+    
+    data = request.get_json()
+    print(f"\n📝 게시물 작성 요청:")
+    print(f"   Title: {data.get('title')}")
+    print(f"   Content: {data.get('content')}")
+    
+    try:
+        result = call_api('POST', '/api/posts', access_token, data)
+        print(f"✅ 게시물 작성 성공: {result}")
+        return jsonify(result)
+    except Exception as e:
+        print(f"❌ 게시물 작성 실패: {str(e)}")
+        return jsonify({"error": str(e)}), 400
+
+
+@app.route('/api/update_settings', methods=['POST'])
+def update_settings():
+    """설정 업데이트 API 호출"""
+    access_token = session.get('access_token')
+    if not access_token:
+        return jsonify({"error": "unauthorized"}), 401
+    
+    data = request.get_json()
+    try:
+        result = call_api('PUT', '/api/settings', access_token, data)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 
 @app.route('/logout')
