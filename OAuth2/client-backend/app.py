@@ -28,6 +28,11 @@ CLIENT_SECRET = "secret_backend"  # 백엔드에서 안전하게 보관
 REDIRECT_URI = REDIRECT_URI_BACKEND
 SCOPE = "profile email"
 
+# 임시 state 저장소 (세션이 작동하지 않을 때 대안)
+# 실제 운영에서는 Redis 등을 사용
+from datetime import datetime, timedelta
+state_storage = {}  # {state: {'created_at': datetime, 'session_id': str}}
+
 
 @app.route('/')
 def index():
@@ -49,8 +54,19 @@ def login():
     """
     # CSRF 방지를 위한 state 생성
     state = secrets.token_urlsafe(32)
+    
+    # 세션과 메모리 둘 다에 저장 (세션이 작동하지 않을 때 대비)
     session['oauth_state'] = state
-    session.permanent = True  # 세션을 영구적으로 설정
+    session.permanent = True
+    
+    # 메모리에도 저장 (만료 시간 포함)
+    state_storage[state] = {
+        'created_at': datetime.now(),
+        'session_id': request.cookies.get('session', 'no_session')
+    }
+    
+    # 오래된 state 정리 (10분 이상)
+    cleanup_old_states()
     
     # Authorization 요청 파라미터
     params = {
@@ -66,9 +82,20 @@ def login():
     
     print(f"\n🚀 사용자를 Authorization Server로 리다이렉트")
     print(f"   State 생성: {state}")
+    print(f"   세션에 저장됨")
+    print(f"   메모리에도 저장됨")
     print(f"   URL: {auth_url}\n")
     
     return redirect(auth_url)
+
+
+def cleanup_old_states():
+    """10분 이상 된 state 삭제"""
+    now = datetime.now()
+    expired = [s for s, data in state_storage.items() 
+               if now - data['created_at'] > timedelta(minutes=10)]
+    for s in expired:
+        del state_storage[s]
 
 
 @app.route('/callback')
@@ -92,21 +119,38 @@ def callback():
                              error_description=error_description)
     
     # State 검증 (CSRF 방지)
-    stored_state = session.get('oauth_state')
+    # 먼저 세션에서 확인
+    stored_state_session = session.get('oauth_state')
+    # 세션이 없으면 메모리에서 확인
+    stored_state_memory = state in state_storage
+    
     print(f"\n🔍 State 검증:")
     print(f"   받은 state: {state}")
-    print(f"   저장된 state: {stored_state}")
-    print(f"   세션 ID: {session.get('_id', 'N/A')}")
-    print(f"   세션 내용: {dict(session)}\n")
+    print(f"   세션에서 찾은 state: {stored_state_session}")
+    print(f"   메모리에서 찾음: {stored_state_memory}")
+    print(f"   세션 내용: {dict(session)}")
     
-    if not state or state != stored_state:
+    # 세션 또는 메모리 중 하나라도 일치하면 OK
+    if not state:
+        print(f"\n❌ State가 없습니다")
+        return render_template('error.html', 
+                             error="invalid_request", 
+                             error_description="State parameter is missing")
+    
+    # 세션 확인
+    if stored_state_session and state == stored_state_session:
+        print(f"✅ 세션에서 State 검증 성공")
+        session.pop('oauth_state', None)
+    # 메모리 확인
+    elif stored_state_memory:
+        print(f"✅ 메모리에서 State 검증 성공")
+        del state_storage[state]
+    else:
         print(f"\n❌ State 불일치! CSRF 공격 가능성")
+        print(f"   사용 가능한 states: {list(state_storage.keys())}")
         return render_template('error.html', 
                              error="invalid_state", 
-                             error_description=f"State parameter mismatch. Received: {state}, Expected: {stored_state}")
-    
-    # State 사용 완료 (일회용)
-    session.pop('oauth_state', None)
+                             error_description=f"State parameter mismatch or expired. Received: {state}")
     
     if not code:
         return render_template('error.html', 
